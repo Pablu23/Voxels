@@ -31,6 +31,8 @@ public static class Program
 
     private static Vector2 _lastMousePos;
 
+    private static DateTime _startTime;
+
     private static readonly float[] Vertices =
     [
         //X    Y      Z       Normals
@@ -104,6 +106,7 @@ public static class Program
 
     private static void OnLoad()
     {
+        _startTime = DateTime.UtcNow;
         IInputContext input = _window.CreateInput();
 #pragma warning disable CA1826
         _primaryKeyboard = input.Keyboards.FirstOrDefault();
@@ -163,10 +166,26 @@ public static class Program
         _lightingShader.SetUniform("uModel", Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(25f)));
         _lightingShader.SetUniform("uView", _camera.GetViewMatrix());
         _lightingShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
-        _lightingShader.SetUniform("objectColor", new Vector3(1f, 0.5f, 0.31f));
-        _lightingShader.SetUniform("lightColor", Vector3.One);
-        _lightingShader.SetUniform("lightPos", _lampPos);
         _lightingShader.SetUniform("viewPos", _camera.Position);
+        
+        _lightingShader.SetUniform("material.ambient", new Vector3(1f, 0.5f, 0.31f));
+        _lightingShader.SetUniform("material.diffuse", new Vector3(1f, 0.5f, 0.31f));
+        _lightingShader.SetUniform("material.specular", new Vector3(0.5f, 0.5f, 0.5f));
+        _lightingShader.SetUniform("material.shininess", 32f);
+
+        float diff = (float)(DateTime.UtcNow - _startTime).TotalSeconds;
+        Vector3 lightColor = Vector3.Zero;
+        lightColor.X = MathF.Sin(diff * 2f);
+        lightColor.Y = MathF.Sin(diff * 0.7f);
+        lightColor.Z = MathF.Sin(diff * 1.3f);
+
+        var diffuseColor = lightColor * new Vector3(0.5f);
+        var ambientColor = diffuseColor * new Vector3(0.2f);
+        
+        _lightingShader.SetUniform("light.ambient", ambientColor);
+        _lightingShader.SetUniform("light.diffuse", diffuseColor);
+        _lightingShader.SetUniform("light.specular", new Vector3(1f, 1f, 1f));
+        _lightingShader.SetUniform("light.position", _lampPos);
         
         _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
         
