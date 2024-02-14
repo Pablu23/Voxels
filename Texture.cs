@@ -1,6 +1,8 @@
 ﻿using System.Net.Mime;
+using Silk.NET.Assimp;
 using Silk.NET.OpenGL;
 using StbImageSharp;
+using File = System.IO.File;
 
 namespace Voxels;
 
@@ -9,10 +11,14 @@ public class Texture : IDisposable
     private readonly uint _handle;
     private readonly GL _gl;
 
-    public unsafe Texture(GL gl, string path)
+    public string Path { get; set; }
+    public TextureType Type { get; }
+    
+    public unsafe Texture(GL gl, string path, TextureType type = TextureType.None)
     {
         _gl = gl;
-
+        Path = path;
+        Type = type;
         _handle = _gl.GenTexture();
         Bind();
 

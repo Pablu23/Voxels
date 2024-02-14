@@ -1,11 +1,8 @@
-﻿using System.Net.Mime;
-using System.Numerics;
+﻿using System.Numerics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
-using StbImageSharp;
-using Color = System.Drawing.Color;
 using Window = Silk.NET.Windowing.Window;
 
 // ReSharper disable FieldCanBeMadeReadOnly.Local
@@ -19,76 +16,13 @@ public static class Program
     private static GL _gl;
     private static IKeyboard? _primaryKeyboard;
 
-    private const int Width = 800, Height = 700;
-
-    private static BufferObject<float> _vbo;
-    private static BufferObject<uint> _ebo;
-    private static VertexArrayObject<float, uint> _vaoCube;
-    private static Shader _lightingShader;
-    private static Shader _lampShader;
-    private static Vector3 _lampPos = new Vector3(1.2f, 1.0f, 2.0f);
-
-    private static Texture _diffuseMap;
-    private static Texture _specularMap;
+    private static Texture _texture;
+    private static Shader _shader;
+    private static Model _model;
     
     private static Camera _camera;
 
     private static Vector2 _lastMousePos;
-
-    private static DateTime _startTime;
-
-    private static readonly float[] Vertices =
-    [
-        //X    Y      Z       Normals             U     V
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f,
-
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f,
-             0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f,
-
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-
-             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f,
-             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
-             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
-
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f
-    ];
-
-
-    private static readonly uint[] Indices =
-    [
-        0, 1, 3,
-        1, 2, 3
-    ];
 
     public static void Main()
     {
@@ -110,7 +44,6 @@ public static class Program
 
     private static void OnLoad()
     {
-        _startTime = DateTime.UtcNow;
         IInputContext input = _window.CreateInput();
 #pragma warning disable CA1826
         _primaryKeyboard = input.Keyboards.FirstOrDefault();
@@ -129,21 +62,12 @@ public static class Program
 
         _gl = GL.GetApi(_window);
 
-        _ebo = new BufferObject<uint>(_gl, Indices, BufferTargetARB.ElementArrayBuffer);
-        _vbo = new BufferObject<float>(_gl, Vertices, BufferTargetARB.ArrayBuffer);
-        _vaoCube = new VertexArrayObject<float, uint>(_gl, _vbo, _ebo);
-
-        _vaoCube.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 8, 0);
-        _vaoCube.VertexAttributePointer(1, 3, VertexAttribPointerType.Float, 8, 3);
-        _vaoCube.VertexAttributePointer(2, 2, VertexAttribPointerType.Float, 8, 6);
+        _camera = new Camera(new Vector3(0f, 0f, 3f), new Vector3(0f, 0f, -1f), Vector3.UnitY,
+            (float)_window.Size.X / (float)_window.Size.Y);
         
-        _lightingShader = new Shader(_gl, "shader.vert", "lighting.frag");
-        _lampShader = new Shader(_gl, "shader.vert", "shader.frag");
-
-        _camera = new Camera(Vector3.UnitZ * 6, Vector3.UnitZ * -1, Vector3.UnitY, Width / Height);
-
-        _diffuseMap = new Texture(_gl, "silkBoxed.png");
-        _specularMap = new Texture(_gl, "silkSpecular.png");
+        _shader = new Shader(_gl, "shader.vert", "shader.frag");
+        _texture = new Texture(_gl, "silk.png");
+        _model = new Model(_gl, "cube.model");
     }
 
     private static void OnUpdate(double deltaTime)
@@ -168,42 +92,30 @@ public static class Program
         _gl.Enable(EnableCap.DepthTest);
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        _vaoCube.Bind();
-        _lightingShader.Use();
+        _texture.Bind();
+        _shader.Use();    
+        _shader.SetUniform("uTexture0", 0);
 
-        _diffuseMap.Bind(TextureUnit.Texture0);
-        _specularMap.Bind(TextureUnit.Texture1);
-        
-        _lightingShader.SetUniform("uModel", Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(25f)));
-        _lightingShader.SetUniform("uView", _camera.GetViewMatrix());
-        _lightingShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
-        _lightingShader.SetUniform("viewPos", _camera.Position);
-        
-        _lightingShader.SetUniform("material.diffuse", 0);
-        _lightingShader.SetUniform("material.specular", 1);
-        _lightingShader.SetUniform("material.shininess", 32f);
-        
-        var diffuseColor = new Vector3(0.5f);
-        Vector3 ambientColor = diffuseColor * new Vector3(0.2f);
-        
-        _lightingShader.SetUniform("light.ambient", ambientColor);
-        _lightingShader.SetUniform("light.diffuse", diffuseColor);
-        _lightingShader.SetUniform("light.specular", new Vector3(1f, 1f, 1f));
-        _lightingShader.SetUniform("light.position", _lampPos);
-        
-        _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
-        
-        _lampShader.Use();
+        float difference = (float)(_window.Time * 100);
 
-        Matrix4x4 lampMatrix = Matrix4x4.Identity;
-        lampMatrix *= Matrix4x4.CreateScale(0.2f);
-        lampMatrix *= Matrix4x4.CreateTranslation(_lampPos);
+        Matrix4x4 model = Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(difference)) *
+                          Matrix4x4.CreateRotationX(MathHelper.DegreesToRadians(difference));
 
-        _lampShader.SetUniform("uModel", lampMatrix);
-        _lampShader.SetUniform("uView", _camera.GetViewMatrix());
-        _lampShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
-        
-        _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
+        Matrix4x4 view = _camera.GetViewMatrix();
+        Matrix4x4 projection = _camera.GetProjectionMatrix();
+
+        foreach (Mesh mesh in _model.Meshes)
+        {
+            mesh.Bind();
+            _shader.Use();
+            _texture.Bind();
+            _shader.SetUniform("uTexture0", 0);
+            _shader.SetUniform("uModel", model);
+            _shader.SetUniform("uView", view);
+            _shader.SetUniform("uProjection", projection);
+            
+            _gl.DrawArrays(PrimitiveType.Triangles, 0, (uint)mesh.Vertices.Length);
+        }
     }
     
     private static void OnMouseWheel(IMouse mouse, ScrollWheel scroll)
@@ -241,10 +153,8 @@ public static class Program
 
     private static void OnClose()
     {
-        _vbo.Dispose();
-        _ebo.Dispose();
-        _vaoCube.Dispose();
-        _lightingShader.Dispose();
-        _lampShader.Dispose();
+        _model.Dispose();
+        _shader.Dispose();
+        _texture.Dispose();
     }
 }
