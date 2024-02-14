@@ -25,56 +25,57 @@ public static class Program
     private static VertexArrayObject<float, uint> _vaoCube;
     private static Shader _lightingShader;
     private static Shader _lampShader;
+    private static Vector3 _lampPos = new Vector3(1.2f, 1.0f, 2.0f);
 
     private static Camera _camera;
 
     private static Vector2 _lastMousePos;
 
     private static readonly float[] Vertices =
-    {
-        //X    Y      Z
-        -0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f, 0.5f, -0.5f,
-        0.5f, 0.5f, -0.5f,
-        -0.5f, 0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
+    [
+        //X    Y      Z       Normals
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
 
-        -0.5f, -0.5f, 0.5f,
-        0.5f, -0.5f, 0.5f,
-        0.5f, 0.5f, 0.5f,
-        0.5f, 0.5f, 0.5f,
-        -0.5f, 0.5f, 0.5f,
-        -0.5f, -0.5f, 0.5f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
 
-        -0.5f, 0.5f, 0.5f,
-        -0.5f, 0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, 0.5f,
-        -0.5f, 0.5f, 0.5f,
+        -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
 
-        0.5f, 0.5f, 0.5f,
-        0.5f, 0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, 0.5f,
-        0.5f, 0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
 
-        -0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, 0.5f,
-        0.5f, -0.5f, 0.5f,
-        -0.5f, -0.5f, 0.5f,
-        -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
 
-        -0.5f, 0.5f, -0.5f,
-        0.5f, 0.5f, -0.5f,
-        0.5f, 0.5f, 0.5f,
-        0.5f, 0.5f, 0.5f,
-        -0.5f, 0.5f, 0.5f,
-        -0.5f, 0.5f, -0.5f
-    };
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f
+    ];
 
 
     private static readonly uint[] Indices =
@@ -125,8 +126,9 @@ public static class Program
         _vbo = new BufferObject<float>(_gl, Vertices, BufferTargetARB.ArrayBuffer);
         _vaoCube = new VertexArrayObject<float, uint>(_gl, _vbo, _ebo);
 
-        _vaoCube.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 3, 0);
-
+        _vaoCube.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 6, 0);
+        _vaoCube.VertexAttributePointer(1, 3, VertexAttribPointerType.Float, 6, 3);
+        
         _lightingShader = new Shader(_gl, "shader.vert", "lighting.frag");
         _lampShader = new Shader(_gl, "shader.vert", "shader.frag");
 
@@ -156,6 +158,29 @@ public static class Program
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         _vaoCube.Bind();
+
+        RenderLitCube();
+
+        RenderLampCube();
+    }
+
+    private static void RenderLampCube()
+    {
+        _lampShader.Use();
+
+        Matrix4x4 lampMatrix = Matrix4x4.Identity;
+        lampMatrix *= Matrix4x4.CreateScale(0.2f);
+        lampMatrix *= Matrix4x4.CreateTranslation(_lampPos);
+
+        _lampShader.SetUniform("uModel", lampMatrix);
+        _lampShader.SetUniform("uView", _camera.GetViewMatrix());
+        _lampShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
+        
+        _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
+    }
+
+    private static void RenderLitCube()
+    {
         _lightingShader.Use();
 
         _lightingShader.SetUniform("uModel", Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(25f)));
@@ -163,18 +188,9 @@ public static class Program
         _lightingShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
         _lightingShader.SetUniform("objectColor", new Vector3(1f, 0.5f, 0.31f));
         _lightingShader.SetUniform("lightColor", Vector3.One);
-        
+        _lightingShader.SetUniform("lightPos", _lampPos);
+
         _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
-
-        _lampShader.Use();
-
-        Matrix4x4 lampMatrix = Matrix4x4.Identity;
-        lampMatrix *= Matrix4x4.CreateScale(0.2f);
-        lampMatrix *= Matrix4x4.CreateTranslation(new Vector3(1.2f, 1.0f, 2.0f));
-        
-        _lampShader.SetUniform("uModel", lampMatrix);
-        _lampShader.SetUniform("uView", _camera.GetViewMatrix());
-        _lampShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
     }
 
     private static void OnMouseWheel(IMouse mouse, ScrollWheel scroll)
