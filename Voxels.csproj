@@ -23,6 +23,9 @@
       <None Update="shader.vert">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="lighting.frag">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

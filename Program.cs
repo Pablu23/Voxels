@@ -17,70 +17,64 @@ public static class Program
     private static IWindow _window;
     private static GL _gl;
     private static IKeyboard? _primaryKeyboard;
-    
+
     private const int Width = 800, Height = 700;
 
     private static BufferObject<float> _vbo;
     private static BufferObject<uint> _ebo;
-    private static VertexArrayObject<float, uint> _vao;
-    private static Texture _texture;
-    private static Shader _shader;
+    private static VertexArrayObject<float, uint> _vaoCube;
+    private static Shader _lightingShader;
+    private static Shader _lampShader;
 
-    private static Vector3 _cameraPos = new(0.0f, 0.0f, 3.0f);
-    private static Vector3 _cameraFront = new(0.0f, 0.0f, -1.0f);
-    private static Vector3 _cameraUp = Vector3.UnitY;
-    private static Vector3 _cameraDir = Vector3.Zero;
-    private static float _cameraYaw = -90f;
-    private static float _cameraPitch = 0f;
-    private static float _cameraZoom = 45f;
+    private static Camera _camera;
 
     private static Vector2 _lastMousePos;
-    
+
     private static readonly float[] Vertices =
-    [
-        //X    Y      Z     U   V
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    {
+        //X    Y      Z
+        -0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f, 0.5f, -0.5f,
+        0.5f, 0.5f, -0.5f,
+        -0.5f, 0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
 
-        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f,
+        0.5f, -0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f,
+        -0.5f, 0.5f, 0.5f,
+        -0.5f, -0.5f, 0.5f,
 
-        -0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, -0.5f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,
-        -0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f,
+        -0.5f, 0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f, 0.5f,
+        -0.5f, 0.5f, 0.5f,
 
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
+        0.5f, 0.5f, 0.5f,
+        0.5f, 0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f,
 
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, 0.5f,
+        0.5f, -0.5f, 0.5f,
+        -0.5f, -0.5f, 0.5f,
+        -0.5f, -0.5f, -0.5f,
 
-        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f
-    ];
+        -0.5f, 0.5f, -0.5f,
+        0.5f, 0.5f, -0.5f,
+        0.5f, 0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f,
+        -0.5f, 0.5f, 0.5f,
+        -0.5f, 0.5f, -0.5f
+    };
 
 
     private static readonly uint[] Indices =
@@ -129,23 +123,68 @@ public static class Program
 
         _ebo = new BufferObject<uint>(_gl, Indices, BufferTargetARB.ElementArrayBuffer);
         _vbo = new BufferObject<float>(_gl, Vertices, BufferTargetARB.ArrayBuffer);
-        _vao = new VertexArrayObject<float, uint>(_gl, _vbo, _ebo);
+        _vaoCube = new VertexArrayObject<float, uint>(_gl, _vbo, _ebo);
 
-        _vao.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 5, 0);
-        _vao.VertexAttributePointer(1, 2, VertexAttribPointerType.Float, 5, 3);
+        _vaoCube.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 3, 0);
 
-        _shader = new Shader(_gl, "shader.vert", "shader.frag");
-        _texture = new Texture(_gl, "silk.png");
+        _lightingShader = new Shader(_gl, "shader.vert", "lighting.frag");
+        _lampShader = new Shader(_gl, "shader.vert", "shader.frag");
+
+        _camera = new Camera(Vector3.UnitZ * 6, Vector3.UnitZ * -1, Vector3.UnitY, Width / Height);
+    }
+
+    private static void OnUpdate(double deltaTime)
+    {
+        float moveSpeed = 2.5f * (float)deltaTime;
+
+        if (_primaryKeyboard is null)
+            return;
+
+        if (_primaryKeyboard.IsKeyPressed(Key.W))
+            _camera.Position += moveSpeed * _camera.Front;
+        if (_primaryKeyboard.IsKeyPressed(Key.S))
+            _camera.Position -= moveSpeed * _camera.Front;
+        if (_primaryKeyboard.IsKeyPressed(Key.A))
+            _camera.Position -= moveSpeed * Vector3.Normalize(Vector3.Cross(_camera.Front, _camera.Up));
+        if (_primaryKeyboard.IsKeyPressed(Key.D))
+            _camera.Position += moveSpeed * Vector3.Normalize(Vector3.Cross(_camera.Front, _camera.Up));
+    }
+
+    private static void OnRender(double obj)
+    {
+        _gl.Enable(EnableCap.DepthTest);
+        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+        _vaoCube.Bind();
+        _lightingShader.Use();
+
+        _lightingShader.SetUniform("uModel", Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(25f)));
+        _lightingShader.SetUniform("uView", _camera.GetViewMatrix());
+        _lightingShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
+        _lightingShader.SetUniform("objectColor", new Vector3(1f, 0.5f, 0.31f));
+        _lightingShader.SetUniform("lightColor", Vector3.One);
+        
+        _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
+
+        _lampShader.Use();
+
+        Matrix4x4 lampMatrix = Matrix4x4.Identity;
+        lampMatrix *= Matrix4x4.CreateScale(0.2f);
+        lampMatrix *= Matrix4x4.CreateTranslation(new Vector3(1.2f, 1.0f, 2.0f));
+        
+        _lampShader.SetUniform("uModel", lampMatrix);
+        _lampShader.SetUniform("uView", _camera.GetViewMatrix());
+        _lampShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
     }
 
     private static void OnMouseWheel(IMouse mouse, ScrollWheel scroll)
     {
-        _cameraZoom = Math.Clamp(_cameraZoom - scroll.Y, 1f, 45f);
+        _camera.ModifyZoom(scroll.Y);
     }
 
     private static void OnMouseMove(IMouse mouse, Vector2 pos)
     {
-        float lookSense = 0.1f;
+        const float lookSense = 0.1f;
         if (_lastMousePos == default) _lastMousePos = pos;
         else
         {
@@ -153,19 +192,7 @@ public static class Program
             float yOffset = (pos.Y - _lastMousePos.Y) * lookSense;
             _lastMousePos = pos;
 
-            _cameraYaw += xOffset;
-            _cameraPitch -= yOffset;
-
-            _cameraPitch = Math.Clamp(_cameraPitch, -89f, 89f);
-
-            _cameraDir.X = MathF.Cos(MathHelper.DegreesToRadians(_cameraYaw)) *
-                           MathF.Cos(MathHelper.DegreesToRadians(_cameraPitch));
-
-            _cameraDir.Y = MathF.Sin(MathHelper.DegreesToRadians(_cameraPitch));
-
-            _cameraDir.Z = MathF.Sin(MathHelper.DegreesToRadians(_cameraYaw)) *
-                           MathF.Cos(MathHelper.DegreesToRadians(_cameraPitch));
-            _cameraFront = Vector3.Normalize(_cameraDir);
+            _camera.ModifyDirection(xOffset, yOffset);
         }
     }
 
@@ -177,48 +204,6 @@ public static class Program
         }
     }
 
-    private static void OnUpdate(double deltaTime)
-    {
-        float moveSpeed = 2.5f * (float) deltaTime;
-
-        if(_primaryKeyboard is null)
-            return;
-        
-        if (_primaryKeyboard.IsKeyPressed(Key.W))
-            _cameraPos += moveSpeed * _cameraFront;
-        if (_primaryKeyboard.IsKeyPressed(Key.S))
-            _cameraPos -= moveSpeed * _cameraFront;
-        if (_primaryKeyboard.IsKeyPressed(Key.A))
-            _cameraPos -= moveSpeed * Vector3.Normalize(Vector3.Cross(_cameraFront, _cameraUp));
-        if (_primaryKeyboard.IsKeyPressed(Key.D))
-            _cameraPos += moveSpeed * Vector3.Normalize(Vector3.Cross(_cameraFront, _cameraUp));
-    }
-
-    private static unsafe void OnRender(double obj)
-    {
-        _gl.Enable(EnableCap.DepthTest);
-        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-        _vao.Bind();
-        _texture.Bind();
-        _shader.Use();
-        _shader.SetUniform("uTexture0", 0);
-
-        float diff = (float)(_window.Time * 100);
-
-        Matrix4x4 model = Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(diff)) *
-                          Matrix4x4.CreateRotationX(MathHelper.DegreesToRadians(diff));
-
-        var view = Matrix4x4.CreateLookAt(_cameraPos, _cameraPos + _cameraFront, _cameraUp);
-        var projection =
-            Matrix4x4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(_cameraZoom), Width / Height, 0.1f, 100f);
-
-        _shader.SetUniform("uModel", model);
-        _shader.SetUniform("uView", view);
-        _shader.SetUniform("uProjection", projection);
-
-        _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
-    }
 
     private static void OnResize(Vector2D<int> size)
     {
@@ -229,8 +214,8 @@ public static class Program
     {
         _vbo.Dispose();
         _ebo.Dispose();
-        _vao.Dispose();
-        _shader.Dispose();
-        _texture.Dispose();
+        _vaoCube.Dispose();
+        _lightingShader.Dispose();
+        _lampShader.Dispose();
     }
 }
