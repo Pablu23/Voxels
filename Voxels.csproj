@@ -10,6 +10,13 @@
 
     <ItemGroup>
       <PackageReference Include="Silk.NET" Version="2.20.0" />
+      <PackageReference Include="StbImageSharp" Version="2.27.13" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="silk.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
