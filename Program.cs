@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Net.Mime;
+using System.Numerics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -27,6 +28,9 @@ public static class Program
     private static Shader _lampShader;
     private static Vector3 _lampPos = new Vector3(1.2f, 1.0f, 2.0f);
 
+    private static Texture _diffuseMap;
+    private static Texture _specularMap;
+    
     private static Camera _camera;
 
     private static Vector2 _lastMousePos;
@@ -35,48 +39,48 @@ public static class Program
 
     private static readonly float[] Vertices =
     [
-        //X    Y      Z       Normals
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-        0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-        0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
+        //X    Y      Z       Normals             U     V
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f,
 
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f,
 
-        -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
 
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
 
-        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
 
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f
     ];
 
 
@@ -129,13 +133,17 @@ public static class Program
         _vbo = new BufferObject<float>(_gl, Vertices, BufferTargetARB.ArrayBuffer);
         _vaoCube = new VertexArrayObject<float, uint>(_gl, _vbo, _ebo);
 
-        _vaoCube.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 6, 0);
-        _vaoCube.VertexAttributePointer(1, 3, VertexAttribPointerType.Float, 6, 3);
+        _vaoCube.VertexAttributePointer(0, 3, VertexAttribPointerType.Float, 8, 0);
+        _vaoCube.VertexAttributePointer(1, 3, VertexAttribPointerType.Float, 8, 3);
+        _vaoCube.VertexAttributePointer(2, 2, VertexAttribPointerType.Float, 8, 6);
         
         _lightingShader = new Shader(_gl, "shader.vert", "lighting.frag");
         _lampShader = new Shader(_gl, "shader.vert", "shader.frag");
 
         _camera = new Camera(Vector3.UnitZ * 6, Vector3.UnitZ * -1, Vector3.UnitY, Width / Height);
+
+        _diffuseMap = new Texture(_gl, "silkBoxed.png");
+        _specularMap = new Texture(_gl, "silkSpecular.png");
     }
 
     private static void OnUpdate(double deltaTime)
@@ -163,24 +171,20 @@ public static class Program
         _vaoCube.Bind();
         _lightingShader.Use();
 
+        _diffuseMap.Bind(TextureUnit.Texture0);
+        _specularMap.Bind(TextureUnit.Texture1);
+        
         _lightingShader.SetUniform("uModel", Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(25f)));
         _lightingShader.SetUniform("uView", _camera.GetViewMatrix());
         _lightingShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
         _lightingShader.SetUniform("viewPos", _camera.Position);
         
-        _lightingShader.SetUniform("material.ambient", new Vector3(1f, 0.5f, 0.31f));
-        _lightingShader.SetUniform("material.diffuse", new Vector3(1f, 0.5f, 0.31f));
-        _lightingShader.SetUniform("material.specular", new Vector3(0.5f, 0.5f, 0.5f));
+        _lightingShader.SetUniform("material.diffuse", 0);
+        _lightingShader.SetUniform("material.specular", 1);
         _lightingShader.SetUniform("material.shininess", 32f);
-
-        float diff = (float)(DateTime.UtcNow - _startTime).TotalSeconds;
-        Vector3 lightColor = Vector3.Zero;
-        lightColor.X = MathF.Sin(diff * 2f);
-        lightColor.Y = MathF.Sin(diff * 0.7f);
-        lightColor.Z = MathF.Sin(diff * 1.3f);
-
-        var diffuseColor = lightColor * new Vector3(0.5f);
-        var ambientColor = diffuseColor * new Vector3(0.2f);
+        
+        var diffuseColor = new Vector3(0.5f);
+        Vector3 ambientColor = diffuseColor * new Vector3(0.2f);
         
         _lightingShader.SetUniform("light.ambient", ambientColor);
         _lightingShader.SetUniform("light.diffuse", diffuseColor);
@@ -202,7 +206,6 @@ public static class Program
         _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
     }
     
-
     private static void OnMouseWheel(IMouse mouse, ScrollWheel scroll)
     {
         _camera.ModifyZoom(scroll.Y);
