@@ -158,14 +158,18 @@ public static class Program
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         _vaoCube.Bind();
+        _lightingShader.Use();
 
-        RenderLitCube();
-
-        RenderLampCube();
-    }
-
-    private static void RenderLampCube()
-    {
+        _lightingShader.SetUniform("uModel", Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(25f)));
+        _lightingShader.SetUniform("uView", _camera.GetViewMatrix());
+        _lightingShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
+        _lightingShader.SetUniform("objectColor", new Vector3(1f, 0.5f, 0.31f));
+        _lightingShader.SetUniform("lightColor", Vector3.One);
+        _lightingShader.SetUniform("lightPos", _lampPos);
+        _lightingShader.SetUniform("viewPos", _camera.Position);
+        
+        _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
+        
         _lampShader.Use();
 
         Matrix4x4 lampMatrix = Matrix4x4.Identity;
@@ -178,20 +182,7 @@ public static class Program
         
         _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
     }
-
-    private static void RenderLitCube()
-    {
-        _lightingShader.Use();
-
-        _lightingShader.SetUniform("uModel", Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(25f)));
-        _lightingShader.SetUniform("uView", _camera.GetViewMatrix());
-        _lightingShader.SetUniform("uProjection", _camera.GetProjectionMatrix());
-        _lightingShader.SetUniform("objectColor", new Vector3(1f, 0.5f, 0.31f));
-        _lightingShader.SetUniform("lightColor", Vector3.One);
-        _lightingShader.SetUniform("lightPos", _lampPos);
-
-        _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
-    }
+    
 
     private static void OnMouseWheel(IMouse mouse, ScrollWheel scroll)
     {
