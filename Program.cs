@@ -14,22 +14,66 @@ public static class Program
     private static IWindow _window;
     private static GL _gl;
 
+    private const int Width = 800, Height = 700;
+    
     private static BufferObject<float> _vbo;
     private static BufferObject<uint> _ebo;
     private static VertexArrayObject<float, uint> _vao;
-    
-    public static Texture Texture;
+    private static Texture _texture;
     private static Shader _shader;
 
-    private static Transform[] Transforms = new Transform[4];
+    private static Vector3 _cameraPos = new Vector3(0.0f, 0.0f, 3.0f);
+    private static Vector3 _cameraTarget = Vector3.Zero;
+    private static Vector3 _cameraDir = Vector3.Normalize(_cameraPos - _cameraTarget);
+    private static Vector3 _cameraRight = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, _cameraDir));
+    private static Vector3 _cameraUp = Vector3.Cross(_cameraDir, _cameraRight);
+    
+    private static Transform[] _transforms = new Transform[4];
     
     private static readonly float[] Vertices =
     {
-        //X    Y      Z     S    T
-        0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, 0.5f, 0.0f, 0.0f
+        //X    Y      Z     U   V
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 
     private static readonly uint[] Indices =
@@ -73,24 +117,24 @@ public static class Program
         _vao.VertexAttributePointer(1, 2, VertexAttribPointerType.Float, 5, 3);
 
         _shader = new Shader(_gl, "shader.vert", "shader.frag");
-        Texture = new Texture(_gl, "silk.png");
+        _texture = new Texture(_gl, "silk.png");
 
-        Transforms[0] = new Transform
+        _transforms[0] = new Transform
         {
             Position = new Vector3(0.5f, 0.5f, 0f)
         };
 
-        Transforms[1] = new Transform
+        _transforms[1] = new Transform
         {
             Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 1f)
         };
         //Scaling.
-        Transforms[2] = new Transform
+        _transforms[2] = new Transform
         {
             Scale = 0.5f
         };
         //Mixed transformation.
-        Transforms[3] = new Transform
+        _transforms[3] = new Transform
         {
             Position = new Vector3(-0.5f, 0.5f, 0f),
             Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 1f),
@@ -112,22 +156,28 @@ public static class Program
 
     private static unsafe void OnRender(double obj)
     {
-        _gl.Clear(ClearBufferMask.ColorBufferBit);
+        _gl.Enable(EnableCap.DepthTest);
+        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         
         _vao.Bind();
+        _texture.Bind();
         _shader.Use();
-        
-        Texture.Bind();
-        
-        _shader.SetUniform("uTexture", 0);
+        _shader.SetUniform("uTexture0", 0);
 
-        for (int i = 0; i < Transforms.Length; i++)
-        {
-            _shader.SetUniform("uModel", Transforms[i].ViewMatrix);
-            
-            _gl.DrawElements(PrimitiveType.Triangles, (uint) Indices.Length, DrawElementsType.UnsignedInt, null);
-            
-        }
+        float diff = (float)(_window.Time * 100);
+
+        Matrix4x4 model = Matrix4x4.CreateRotationY(MathHelper.DegreesToRadians(diff)) *
+                          Matrix4x4.CreateRotationX(MathHelper.DegreesToRadians(diff));
+
+        var view = Matrix4x4.CreateLookAt(_cameraPos, _cameraTarget, _cameraUp);
+        var projection =
+            Matrix4x4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(45.0f), Width / Height, 0.1f, 100f);
+        
+        _shader.SetUniform("uModel", model);
+        _shader.SetUniform("uView", view);
+        _shader.SetUniform("uProjection", projection);
+        
+        _gl.DrawArrays(PrimitiveType.Triangles, 0, 36);
     }
 
     private static void OnResize(Vector2D<int> size)
@@ -141,6 +191,6 @@ public static class Program
         _ebo.Dispose();
         _vao.Dispose();
         _shader.Dispose();
-        Texture.Dispose();
+        _texture.Dispose();
     }
 }
