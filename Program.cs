@@ -1,4 +1,5 @@
-﻿using Silk.NET.Input;
+﻿using System.Numerics;
+using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
@@ -19,6 +20,8 @@ public static class Program
     
     public static Texture Texture;
     private static Shader _shader;
+
+    private static Transform[] Transforms = new Transform[4];
     
     private static readonly float[] Vertices =
     {
@@ -71,6 +74,28 @@ public static class Program
 
         _shader = new Shader(_gl, "shader.vert", "shader.frag");
         Texture = new Texture(_gl, "silk.png");
+
+        Transforms[0] = new Transform
+        {
+            Position = new Vector3(0.5f, 0.5f, 0f)
+        };
+
+        Transforms[1] = new Transform
+        {
+            Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 1f)
+        };
+        //Scaling.
+        Transforms[2] = new Transform
+        {
+            Scale = 0.5f
+        };
+        //Mixed transformation.
+        Transforms[3] = new Transform
+        {
+            Position = new Vector3(-0.5f, 0.5f, 0f),
+            Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, 1f),
+            Scale = 0.5f
+        };
     }
 
     private static void KeyDown(IKeyboard arg1, Key arg2, int arg3)
@@ -95,8 +120,14 @@ public static class Program
         Texture.Bind();
         
         _shader.SetUniform("uTexture", 0);
-        
-        _gl.DrawElements(PrimitiveType.Triangles, (uint) Indices.Length, DrawElementsType.UnsignedInt, null);
+
+        for (int i = 0; i < Transforms.Length; i++)
+        {
+            _shader.SetUniform("uModel", Transforms[i].ViewMatrix);
+            
+            _gl.DrawElements(PrimitiveType.Triangles, (uint) Indices.Length, DrawElementsType.UnsignedInt, null);
+            
+        }
     }
 
     private static void OnResize(Vector2D<int> size)
